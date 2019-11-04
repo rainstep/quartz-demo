@@ -280,7 +280,8 @@ public class QuartzServiceImpl implements QuartzService {
         JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         try {
-            scheduler.pauseJob(jobKey);
+//            scheduler.pauseJob(jobKey);
+            scheduler.pauseTrigger(triggerKey);
             scheduler.unscheduleJob(triggerKey);
             scheduler.deleteJob(jobKey);
         } catch (SchedulerException e) {

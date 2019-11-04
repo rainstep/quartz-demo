@@ -1,9 +1,7 @@
 package com.example.quartzdemo.service.job;
 
 import com.example.quartzdemo.service.BaseService;
-import org.quartz.JobDataMap;
-import org.quartz.JobDetail;
-import org.quartz.JobExecutionContext;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,14 +14,16 @@ public class MyJob extends QuartzJobBean {
     private BaseService baseService;
 
     @Override
-    protected void executeInternal(JobExecutionContext jobExecutionContext) {
-        JobDetail jobDetail = jobExecutionContext.getJobDetail();
-        String name = jobDetail.getKey().getName();
+    protected void executeInternal(JobExecutionContext context) {
+        JobDetail jobDetail = context.getJobDetail();
+        JobKey jobKey = jobDetail.getKey();
+        TriggerKey triggerKey = context.getTrigger().getKey();
         JobDataMap jobDataMap = jobDetail.getJobDataMap();
-        logger.info("------{}执行------>", name);
+        logger.info("------ 任务开始 ------>");
+        logger.info("{}.{} {}.{}", jobKey.getGroup(), jobKey.getName(), triggerKey.getGroup(), triggerKey.getName());
         jobDataMap.forEach((key, val) -> {
             logger.info("key: {}, val: {}", key, val);
         });
-        logger.info("<------{}执行------\n", name);
+        logger.info("<------ 任务结束 ------\n");
     }
 }
