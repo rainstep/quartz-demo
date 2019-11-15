@@ -1,7 +1,7 @@
 package com.example.quartzdemo;
 
 import com.example.quartzdemo.service.QuartzService;
-import com.example.quartzdemo.service.impl.QuartzServiceImpl2;
+import com.example.quartzdemo.service.impl.QuartzServiceImpl;
 import com.example.quartzdemo.service.job.MyJob;
 import org.junit.jupiter.api.Test;
 import org.quartz.Job;
@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SpringBootTest
 class QuartzDemoApplicationTests {
     @Autowired
-    private QuartzServiceImpl2 quartzService2;
+    private QuartzServiceImpl quartzService2;
     @Autowired
     private QuartzService quartzService;
 

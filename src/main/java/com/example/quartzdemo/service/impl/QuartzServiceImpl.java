@@ -2,6 +2,8 @@ package com.example.quartzdemo.service.impl;
 
 import com.example.quartzdemo.service.QuartzService;
 import org.quartz.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -10,311 +12,242 @@ import java.util.Map;
 
 @Service
 public class QuartzServiceImpl implements QuartzService {
+    private static final Logger logger = LoggerFactory.getLogger(QuartzServiceImpl.class);
 
     @Autowired
     private Scheduler scheduler;
 
-    /**
-     * 添加简单任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void addSimpleTask(String jobName, Class<? extends Job> jobClass, String triggerName,
-                              Date startTime, Date endTime,
-                              int intervalSeconds, int repeatCount,
-                              Map<?, ?> dataMap) {
-        this.addSimpleTask(jobName, DEFAULT_JOB_GROUP_NAME, jobClass,
-                triggerName, DEFAULT_TRIGGER_GROUP_NAME,
-                startTime, endTime,
-                intervalSeconds, repeatCount,
-                dataMap);
-    }
-
-    /**
-     * 添加简单任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void addSimpleTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
+    public boolean addSimpleTask(String jobName, String jobGroupName,
+                              Class<? extends Job> jobClass, Map<?, ?> jobData,
                               String triggerName, String triggerGroupName,
                               Date startTime, Date endTime,
-                              int intervalSeconds, int repeatCount,
-                              Map<?, ?> dataMap) {
-        SimpleScheduleBuilder scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
-        this.scheduleJob(jobName, jobGroupName, jobClass,
-                triggerName, triggerGroupName,
-                startTime, endTime, dataMap, scheduleBuilder);
-    }
+                              int intervalSeconds, int repeatCount) throws SchedulerException {
+        // 获取或创建JobDetail
+        JobDetail jobDetail = this.getOrCreateJobDetail(jobName, jobGroupName, jobClass, jobData);
 
-    /**
-     * 修改简单任务
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void modifySimpleTask(String triggerName,
-                                 Date startTime, Date endTime,
-                                 int intervalSeconds, int repeatCount,
-                                 Map<?, ?> dataMap) {
-        this.modifySimpleTask(triggerName, DEFAULT_TRIGGER_GROUP_NAME,
+        // 判断任务是否已存在
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        if (scheduler.checkExists(triggerKey)) {
+            logger.warn("Trigger({}.{})已存在", triggerName, triggerGroupName);
+            return false;
+        }
+
+        // 创建Trigger
+        SimpleTrigger trigger = this.createSimpleTrigger(triggerName, triggerGroupName,
                 startTime, endTime,
-                intervalSeconds, repeatCount,
-                dataMap);
+                intervalSeconds, repeatCount, jobDetail);
+
+        // 执行任务
+        scheduler.scheduleJob(trigger);
+        return true;
     }
 
-    /**
-     * 修改简单任务
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void modifySimpleTask(String triggerName, String triggerGroupName,
-                                 Date startTime, Date endTime,
-                                 int intervalSeconds, int repeatCount,
-                                 Map<?, ?> dataMap) {
-        SimpleScheduleBuilder scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
-        this.rescheduleJob(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder);
-    }
-
-    /**
-     * 保存简单任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void saveSimpleTask(String jobName, Class<? extends Job> jobClass, String triggerName,
-                               Date startTime, Date endTime,
-                               int intervalSeconds, int repeatCount,
-                               Map<?, ?> dataMap) {
-        this.saveSimpleTask(jobName, DEFAULT_JOB_GROUP_NAME, jobClass,
-                triggerName, DEFAULT_TRIGGER_GROUP_NAME,
-                startTime, endTime,
-                intervalSeconds, repeatCount,
-                dataMap);
-    }
-
-    /**
-     * 保存简单任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    @Override
-    public void saveSimpleTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                               String triggerName, String triggerGroupName,
-                               Date startTime, Date endTime,
-                               int intervalSeconds, int repeatCount,
-                               Map<?, ?> dataMap) {
-        SimpleScheduleBuilder scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
-        this.saveScheduleJob(jobName, jobGroupName, jobClass,
-                triggerName, triggerGroupName,
-                startTime, endTime, dataMap, scheduleBuilder);
-    }
-
-    /**
-     * 添加cron任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void addCronTask(String jobName, Class<? extends Job> jobClass,
-                            String triggerName, Date startTime, Date endTime,
-                            String cron, Map<?, ?> dataMap) {
-        this.addCronTask(jobName, DEFAULT_JOB_GROUP_NAME, jobClass,
-                triggerName, DEFAULT_TRIGGER_GROUP_NAME,
-                startTime, endTime,
-                cron, dataMap);
-    }
-
-    /**
-     * 添加cron任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void addCronTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
+    public boolean addCronTask(String jobName, String jobGroupName,
+                            Class<? extends Job> jobClass, Map<?, ?> jobData,
                             String triggerName, String triggerGroupName,
                             Date startTime, Date endTime,
-                            String cron, Map<?, ?> dataMap) {
-        CronScheduleBuilder scheduleBuilder = this.createCronScheduleBuilder(cron);
-        this.scheduleJob(jobName, jobGroupName, jobClass,
-                triggerName, triggerGroupName,
-                startTime, endTime, dataMap, scheduleBuilder);
+                            String cron) throws SchedulerException {
+        // 获取或创建JobDetail
+        JobDetail jobDetail = this.getOrCreateJobDetail(jobName, jobGroupName, jobClass, jobData);
+
+        // 判断任务是否已存在
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        if (scheduler.checkExists(triggerKey)) {
+            logger.warn("Trigger({}.{})已存在", triggerName, triggerGroupName);
+            return false;
+        }
+
+        // 创建Trigger
+        CronTrigger trigger = this.createCronTrigger(triggerName, triggerGroupName, startTime, endTime, cron, jobDetail);
+
+        // 执行任务
+        scheduler.scheduleJob(trigger);
+        return true;
     }
 
 
-    /**
-     * 修改cron任务
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void modifyCronTask(String triggerName,
-                               Date startTime, Date endTime, String cron, Map<?, ?> dataMap) {
-        this.modifyCronTask(triggerName, DEFAULT_TRIGGER_GROUP_NAME, startTime, endTime, cron, dataMap);
+    public boolean updateSimpleTask(String triggerName, String triggerGroupName,
+                                 Date startTime, Date endTime,
+                                 int intervalSeconds, int repeatCount) throws SchedulerException {
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        // 判断任务是否存在
+        Trigger trigger = scheduler.getTrigger(triggerKey);
+        if(trigger == null) {
+            logger.warn("Trigger({}.{})不存在", triggerName, triggerGroupName);
+            return false;
+        }
+
+        // 更新Trigger
+        ScheduleBuilder<SimpleTrigger> scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
+        trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
+
+        // 重启任务
+        scheduler.pauseTrigger(triggerKey);
+        scheduler.rescheduleJob(triggerKey, trigger);
+        return true;
     }
 
-    /**
-     * 修改cron任务
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void modifyCronTask(String triggerName, String triggerGroupName,
+
+    public boolean updateCronTask(String triggerName, String triggerGroupName,
+                               Date startTime, Date endTime, String cron) throws SchedulerException {
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        // 判断任务是否存在
+        Trigger trigger = scheduler.getTrigger(triggerKey);
+        if(trigger == null) {
+            logger.warn("Trigger({}.{})不存在", triggerName, triggerGroupName);
+            return false;
+        }
+
+        // 更新Trigger
+        ScheduleBuilder<CronTrigger> scheduleBuilder = this.createCronScheduleBuilder(cron);
+        trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
+
+        // 重启任务
+        scheduler.pauseTrigger(triggerKey);
+        scheduler.rescheduleJob(triggerKey, trigger);
+        return true;
+    }
+
+    public boolean saveSimpleTask(String jobName, String jobGroupName,
+                               Class<? extends Job> jobClass, Map<?, ?> jobData,
+                               String triggerName, String triggerGroupName,
                                Date startTime, Date endTime,
-                               String cron, Map<?, ?> dataMap) {
-        CronScheduleBuilder scheduleBuilder = this.createCronScheduleBuilder(cron);
-        rescheduleJob(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder);
+                               int intervalSeconds, int repeatCount) throws SchedulerException {
+        // 获取或创建JobDetail
+        JobDetail jobDetail = this.getOrCreateJobDetail(jobName, jobGroupName, jobClass, jobData);
+
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        Trigger trigger = scheduler.getTrigger(triggerKey);
+        if(trigger == null) {
+            trigger = this.createSimpleTrigger(triggerName, triggerGroupName, startTime, endTime, intervalSeconds, repeatCount, jobDetail);
+            scheduler.scheduleJob(trigger);
+        } else {
+            ScheduleBuilder<SimpleTrigger> scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
+            trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
+            scheduler.rescheduleJob(triggerKey, trigger);
+        }
+        return true;
     }
 
-    /**
-     * 保存cron任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void saveCronTask(String jobName, Class<? extends Job> jobClass,
-                             String triggerName,
-                             Date startTime, Date endTime,
-                             String cron, Map<?, ?> dataMap) {
-        this.saveCronTask(jobName, DEFAULT_JOB_GROUP_NAME, jobClass,
-                triggerName, DEFAULT_TRIGGER_GROUP_NAME,
-                startTime, endTime, cron, dataMap);
-    }
-
-    /**
-     * 保存cron任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    @Override
-    public void saveCronTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
+    public boolean saveCronTask(String jobName, String jobGroupName,
+                             Class<? extends Job> jobClass, Map<?, ?> jobData,
                              String triggerName, String triggerGroupName,
                              Date startTime, Date endTime,
-                             String cron, Map<?, ?> dataMap) {
-        CronScheduleBuilder scheduleBuilder = this.createCronScheduleBuilder(cron);
-        this.saveScheduleJob(jobName, jobGroupName, jobClass,
-                triggerName, triggerGroupName,
-                startTime, endTime, dataMap, scheduleBuilder);
-    }
+                             String cron) throws SchedulerException {
+        // 获取或创建JobDetail
+        JobDetail jobDetail = this.getOrCreateJobDetail(jobName, jobGroupName, jobClass, jobData);
 
-    /**
-     * 移除任务
-     * @param jobName 任务名称
-     * @param triggerName 触发器名称
-     */
-    @Override
-    public void removeTask(String jobName, String triggerName) {
-        this.removeTask(jobName, DEFAULT_JOB_GROUP_NAME, triggerName, DEFAULT_TRIGGER_GROUP_NAME);
-    }
-
-    /**
-     * 移除任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     */
-    @Override
-    public void removeTask(String jobName, String jobGroupName,
-                           String triggerName, String triggerGroupName) {
-        if (jobGroupName == null) jobGroupName = DEFAULT_JOB_GROUP_NAME;
-        if (triggerGroupName == null) triggerGroupName = DEFAULT_TRIGGER_GROUP_NAME;
-        JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
-        try {
-//            scheduler.pauseJob(jobKey);
-            scheduler.pauseTrigger(triggerKey);
-            scheduler.unscheduleJob(triggerKey);
-            scheduler.deleteJob(jobKey);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
+        Trigger trigger = scheduler.getTrigger(triggerKey);
+        if(trigger == null) {
+            trigger = this.createCronTrigger(triggerName, triggerGroupName, startTime, endTime, cron, jobDetail);
+            scheduler.scheduleJob(trigger);
+        } else {
+            ScheduleBuilder<CronTrigger> scheduleBuilder = this.createCronScheduleBuilder(cron);
+            trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
+            scheduler.rescheduleJob(triggerKey, trigger);
         }
+        return true;
+    }
 
+    public boolean pauseTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        if (!scheduler.checkExists(triggerKey)) {
+            logger.warn("Trigger({}.{})不存在", triggerName, triggerGroupName);
+            return false;
+        }
+        scheduler.pauseTrigger(triggerKey);
+        return true;
+    }
+
+    public boolean pauseJob(String jobName, String jobGroupName) throws SchedulerException {
+        JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
+        if (!scheduler.checkExists(jobKey)) {
+            logger.warn("Job({}.{})不存在", jobName, jobGroupName);
+            return false;
+        }
+        scheduler.pauseJob(jobKey);
+        return true;
+    }
+
+    public boolean pauseAll() throws SchedulerException {
+        scheduler.pauseAll();
+        return true;
     }
 
 
-    /**
-     * 创建JobDetail
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param dataMap 任务数据
-     * @return JobDetail
-     */
-    private JobDetail createJobDetail(String jobName, String jobGroupName, Class<? extends Job> jobClass, Map<?, ?> dataMap) {
-        JobBuilder jobBuilder = JobBuilder.newJob(jobClass)
-                .withIdentity(jobName, jobGroupName);
-        if (dataMap != null) {
-            jobBuilder.setJobData(new JobDataMap(dataMap));
+    public boolean resumeTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        if (!scheduler.checkExists(triggerKey)) {
+            logger.warn("Trigger({}.{})不存在", triggerName, triggerGroupName);
+            return false;
         }
-        return jobBuilder.build();
+        scheduler.resumeTrigger(triggerKey);
+        return true;
     }
 
-    /**
-     * 创建简单定时器
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     * @return SimpleScheduleBuilder
-     */
-    private SimpleScheduleBuilder createSimpleScheduleBuilder(int intervalSeconds, int repeatCount) {
+    public boolean resumeJob(String jobName, String jobGroupName) throws SchedulerException {
+        JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
+        if (!scheduler.checkExists(jobKey)) {
+            logger.warn("Job({}.{})不存在", jobName, jobGroupName);
+            return false;
+        }
+        scheduler.resumeJob(jobKey);
+        return true;
+    }
+
+    public boolean resumeAll() throws SchedulerException {
+        scheduler.resumeAll();
+        return true;
+    }
+
+
+    public boolean removeTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
+        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
+        if (!scheduler.checkExists(triggerKey)) {
+            logger.warn("Trigger({}.{})不存在", triggerName, triggerGroupName);
+            return false;
+        }
+        scheduler.pauseTrigger(triggerKey);
+        scheduler.unscheduleJob(triggerKey);
+        return true;
+    }
+
+    public boolean removeJob(String jobName, String jobGroupName) throws SchedulerException {
+        JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
+        if (!scheduler.checkExists(jobKey)) {
+            logger.warn("Job({}.{})不存在", jobName, jobGroupName);
+            return false;
+        }
+        scheduler.pauseJob(jobKey);
+        scheduler.deleteJob(jobKey);
+        return true;
+    }
+
+
+
+    /* Private Methods */
+
+    /* Create JobDetail */
+    private JobDetail getOrCreateJobDetail(String jobName, String jobGroupName,
+                                           Class<? extends Job> jobClass, Map<?, ?> jobData) throws SchedulerException {
+        JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
+        JobDetail jobDetail = scheduler.getJobDetail(jobKey);
+        if (jobDetail == null) {
+            JobBuilder jobBuilder = JobBuilder.newJob(jobClass)
+                    .withIdentity(jobKey)
+                    .storeDurably(); // 设置durably=true, 可以一个detail绑定多个trigger
+            if (jobData != null) {
+                jobBuilder.setJobData(new JobDataMap(jobData));
+            }
+            jobDetail = jobBuilder.build();
+            scheduler.addJob(jobDetail, false);
+        }
+        return jobDetail;
+    }
+
+    /*  <-- Create ScheduleBuilder */
+    private ScheduleBuilder<SimpleTrigger> createSimpleScheduleBuilder(int intervalSeconds, int repeatCount) {
         SimpleScheduleBuilder scheduleBuilder = SimpleScheduleBuilder
                 .simpleSchedule()
                 .withIntervalInSeconds(intervalSeconds);
@@ -326,128 +259,63 @@ public class QuartzServiceImpl implements QuartzService {
         return scheduleBuilder;
     }
 
-    /**
-     * 创建cron定时器
-     * @param cron cron表达式
-     * @return CronScheduleBuilder
-     */
-    private CronScheduleBuilder createCronScheduleBuilder(String cron) {
+
+    private ScheduleBuilder<CronTrigger> createCronScheduleBuilder(String cron) {
         return CronScheduleBuilder.cronSchedule(cron);
     }
+    /* Create ScheduleBuilder --> */
 
-    /**
-     * 创建触发器
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param scheduleBuilder 定时器
-     * @return Trigger
-     */
-    private Trigger createTrigger(String triggerName, String triggerGroupName,
-                                  Date startTime, Date endTime,
-                                  ScheduleBuilder<? extends Trigger> scheduleBuilder) {
-        TriggerBuilder<? extends Trigger> triggerBuilder = TriggerBuilder.newTrigger()
+
+    /*  <-- Create TriggerBuilder */
+    private <T extends Trigger> TriggerBuilder<T> createTriggerBuilder(String triggerName, String triggerGroupName,
+                                                                       Date startTime, Date endTime,
+                                                                       ScheduleBuilder<T> scheduleBuilder, JobDetail jobDetail) {
+        TriggerBuilder<T > triggerBuilder = TriggerBuilder.newTrigger()
                 .withIdentity(triggerName, triggerGroupName)
                 .withSchedule(scheduleBuilder);
         if (startTime != null) triggerBuilder.startAt(startTime);
         if (endTime != null) triggerBuilder.endAt(endTime);
+        if (jobDetail != null) triggerBuilder.forJob(jobDetail);
+        return triggerBuilder;
+    }
+
+    /* Create TriggerBuilder --> */
+
+
+    /*  <-- Create Trigger */
+    private SimpleTrigger createSimpleTrigger(String triggerName, String triggerGroupName,
+                                              Date startTime, Date endTime,
+                                              int intervalSeconds, int repeatCount, JobDetail jobDetail) {
+        ScheduleBuilder<SimpleTrigger> scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
+        TriggerBuilder<SimpleTrigger> triggerBuilder = this.createTriggerBuilder(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder, jobDetail);
         return triggerBuilder.build();
     }
 
-    /**
-     * 更新触发器
-     * @param trigger 源触发器
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param scheduleBuilder 定时器
-     * @return 新触发器
-     */
+    private CronTrigger createCronTrigger(String triggerName, String triggerGroupName,
+                                              Date startTime, Date endTime,
+                                              String cron, JobDetail jobDetail) {
+        ScheduleBuilder<CronTrigger> scheduleBuilder = this.createCronScheduleBuilder(cron);
+        TriggerBuilder<CronTrigger> triggerBuilder = this.createTriggerBuilder(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder, jobDetail);
+        return triggerBuilder.build();
+    }
+    /* Create Trigger --> */
+
+
+    /*  <-- Update Trigger */
     private Trigger updateTrigger(Trigger trigger,
                                   Date startTime, Date endTime,
                                   ScheduleBuilder scheduleBuilder) {
-        TriggerBuilder triggerBuilder = trigger.getTriggerBuilder().withSchedule(scheduleBuilder);
+        TriggerBuilder<? extends Trigger> triggerBuilder = trigger.getTriggerBuilder();
+        triggerBuilder.withSchedule(scheduleBuilder);
         if (startTime != null) triggerBuilder.startAt(startTime);
         if (endTime != null) triggerBuilder.endAt(endTime);
         return triggerBuilder.build();
     }
+    /* Update Trigger --> */
 
-    /**
-     * 执行任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param scheduleBuilder 定时器
-     */
-    private void scheduleJob(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                             String triggerName, String triggerGroupName,
-                             Date startTime, Date endTime, Map<?, ?> dataMap, ScheduleBuilder<? extends Trigger> scheduleBuilder) {
-        if (jobGroupName == null) jobGroupName = DEFAULT_JOB_GROUP_NAME;
-        if (triggerGroupName == null) triggerGroupName = DEFAULT_TRIGGER_GROUP_NAME;
-        JobDetail jobDetail = this.createJobDetail(jobName, jobGroupName, jobClass, dataMap);
-        Trigger trigger = this.createTrigger(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder);
-        try {
-            scheduler.scheduleJob(jobDetail, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
 
-    /**
-     * 更新任务
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param scheduleBuilder 定时器
-     */
-    private void rescheduleJob(String triggerName, String triggerGroupName,
-                               Date startTime, Date endTime, ScheduleBuilder scheduleBuilder) {
-        if (triggerGroupName == null) triggerGroupName = DEFAULT_TRIGGER_GROUP_NAME;
-        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
-        try {
-            Trigger trigger = scheduler.getTrigger(triggerKey);
-            if (trigger == null) return;
-            trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
-            scheduler.rescheduleJob(triggerKey, trigger);
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
 
-    /**
-     * 执行或更新任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 开始时间
-     * @param endTime 结束时间
-     * @param scheduleBuilder 定时器
-     */
-    private void saveScheduleJob(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                            String triggerName, String triggerGroupName,
-                            Date startTime, Date endTime, Map<?, ?> dataMap, ScheduleBuilder<? extends Trigger> scheduleBuilder) {
-        if (jobGroupName == null) jobGroupName = DEFAULT_JOB_GROUP_NAME;
-        if (triggerGroupName == null) triggerGroupName = DEFAULT_TRIGGER_GROUP_NAME;
-        TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
-        try {
-            Trigger trigger = scheduler.getTrigger(triggerKey);
-            if (trigger == null)  {
-                JobDetail jobDetail = this.createJobDetail(jobName, jobGroupName, jobClass, dataMap);
-                trigger = this.createTrigger(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder);
-                scheduler.scheduleJob(jobDetail, trigger);
-            } else {
-                trigger = this.updateTrigger(trigger, startTime, endTime, scheduleBuilder);
-                scheduler.rescheduleJob(triggerKey, trigger);
-            }
-        } catch (SchedulerException e) {
-            e.printStackTrace();
-        }
-    }
+
+
+
 }

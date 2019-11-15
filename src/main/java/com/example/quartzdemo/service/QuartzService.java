@@ -1,6 +1,7 @@
 package com.example.quartzdemo.service;
 
 import org.quartz.Job;
+import org.quartz.SchedulerException;
 import org.springframework.scheduling.quartz.QuartzJobBean;
 
 import java.util.Date;
@@ -10,191 +11,50 @@ public interface QuartzService {
     String DEFAULT_JOB_GROUP_NAME = "defaultJobGroup";
     String DEFAULT_TRIGGER_GROUP_NAME = "defaultTriggerGroup";
 
-    /**
-     * 添加简单任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void addSimpleTask(String jobName, Class<? extends Job> jobClass, String triggerName,
-                       Date startTime, Date endTime,
-                       int intervalSeconds, int repeatCount,
-                       Map<?, ?> dataMap);
-
-    /**
-     * 添加简单任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void addSimpleTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                       String triggerName, String triggerGroupName,
-                       Date startTime, Date endTime,
-                       int intervalSeconds, int repeatCount,
-                       Map<?, ?> dataMap);
-
-    /**
-     * 修改简单任务
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void modifySimpleTask(String triggerName,
+    boolean addSimpleTask(String jobName, String jobGroupName,
+                          Class<? extends Job> jobClass, Map<?, ?> jobData,
+                          String triggerName, String triggerGroupName,
                           Date startTime, Date endTime,
-                          int intervalSeconds, int repeatCount,
-                          Map<?, ?> dataMap);
+                          int intervalSeconds, int repeatCount) throws SchedulerException;
 
-    /**
-     * 修改简单任务
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void modifySimpleTask(String triggerName, String triggerGroupName,
-                          Date startTime, Date endTime,
-                          int intervalSeconds, int repeatCount,
-                          Map<?, ?> dataMap);
-
-    /**
-     * 保存简单任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void saveSimpleTask(String jobName, Class<? extends Job> jobClass, String triggerName,
-                        Date startTime, Date endTime,
-                        int intervalSeconds, int repeatCount,
-                        Map<?, ?> dataMap);
-
-    /**
-     * 保存简单任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param intervalSeconds 循环间隔(s)
-     * @param repeatCount 复次数(小于0表示无限重复,等于0表示不重复)
-     */
-    void saveSimpleTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
+    boolean addCronTask(String jobName, String jobGroupName,
+                        Class<? extends Job> jobClass, Map<?, ?> jobData,
                         String triggerName, String triggerGroupName,
                         Date startTime, Date endTime,
-                        int intervalSeconds, int repeatCount,
-                        Map<?, ?> dataMap);
+                        String cron) throws SchedulerException;
 
-    /**
-     * 添加cron任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void addCronTask(String jobName, Class<? extends Job> jobClass,
-                     String triggerName, Date startTime, Date endTime,
-                     String cron, Map<?, ?> dataMap);
+    boolean updateSimpleTask(String triggerName, String triggerGroupName,
+                             Date startTime, Date endTime,
+                             int intervalSeconds, int repeatCount) throws SchedulerException;
 
-    /**
-     * 添加cron任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void addCronTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                     String triggerName, String triggerGroupName,
-                     Date startTime, Date endTime,
-                     String cron, Map<?, ?> dataMap);
+    boolean updateCronTask(String triggerName, String triggerGroupName,
+                   Date startTime, Date endTime, String cron) throws SchedulerException;
 
-    /**
-     * 修改cron任务
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void modifyCronTask(String triggerName, Date startTime, Date endTime, String cron, Map<?, ?> dataMap);
+    boolean saveSimpleTask(String jobName, String jobGroupName,
+                           Class<? extends Job> jobClass, Map<?, ?> jobData,
+                           String triggerName, String triggerGroupName,
+                           Date startTime, Date endTime,
+                           int intervalSeconds, int repeatCount) throws SchedulerException;
 
-    /**
-     * 修改cron任务
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void modifyCronTask(String triggerName, String triggerGroupName, Date startTime, Date endTime,
-                        String cron, Map<?, ?> dataMap);
+    boolean saveCronTask(String jobName, String jobGroupName,
+                         Class<? extends Job> jobClass, Map<?, ?> jobData,
+                         String triggerName, String triggerGroupName,
+                         Date startTime, Date endTime,
+                         String cron) throws SchedulerException;
 
-    /**
-     * 保存cron任务
-     * @param jobName 任务名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void saveCronTask(String jobName, Class<? extends Job> jobClass,
-                      String triggerName,
-                      Date startTime, Date endTime,
-                      String cron, Map<?, ?> dataMap);
+    boolean pauseTrigger(String triggerName, String triggerGroupName) throws SchedulerException;
 
-    /**
-     * 保存cron任务
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param jobClass 任务执行类
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     * @param startTime 任务开始时间
-     * @param endTime 任务停止时间
-     * @param cron cron表达式
-     */
-    void saveCronTask(String jobName, String jobGroupName, Class<? extends Job> jobClass,
-                      String triggerName, String triggerGroupName,
-                      Date startTime, Date endTime,
-                      String cron, Map<?, ?> dataMap);
+    boolean pauseJob(String jobName, String jobGroupName) throws SchedulerException;
 
-    /**
-     * 移除任务
-     * @param jobName 任务名称
-     * @param triggerName 触发器名称
-     */
-    void removeTask(String jobName, String triggerName);
+    boolean pauseAll() throws SchedulerException;
 
-    /**
-     *
-     * @param jobName 任务名称
-     * @param jobGroupName 任务分组名称
-     * @param triggerName 触发器名称
-     * @param triggerGroupName 触发器分组名称
-     */
-    void removeTask(String jobName, String jobGroupName, String triggerName, String triggerGroupName);
+    boolean resumeTrigger(String triggerName, String triggerGroupName) throws SchedulerException;
+
+    boolean resumeJob(String jobName, String jobGroupName) throws SchedulerException;
+
+    boolean resumeAll() throws SchedulerException;
+
+    boolean removeTrigger(String triggerName, String triggerGroupName) throws SchedulerException;
+
+    boolean removeJob(String jobName, String jobGroupName) throws SchedulerException;
 }
