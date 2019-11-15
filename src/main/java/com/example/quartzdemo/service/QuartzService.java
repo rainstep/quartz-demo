@@ -11,6 +11,12 @@ public interface QuartzService {
     String DEFAULT_JOB_GROUP_NAME = "defaultJobGroup";
     String DEFAULT_TRIGGER_GROUP_NAME = "defaultTriggerGroup";
 
+    boolean addSimpleTask(String jobName,
+                          Class<? extends Job> jobClass, Map<?, ?> jobData,
+                          String triggerName,
+                          Date startTime, Date endTime,
+                          int intervalSeconds, int repeatCount) throws SchedulerException;
+
     boolean addSimpleTask(String jobName, String jobGroupName,
                           Class<? extends Job> jobClass, Map<?, ?> jobData,
                           String triggerName, String triggerGroupName,
@@ -57,4 +63,5 @@ public interface QuartzService {
     boolean removeTrigger(String triggerName, String triggerGroupName) throws SchedulerException;
 
     boolean removeJob(String jobName, String jobGroupName) throws SchedulerException;
+
 }

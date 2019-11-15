@@ -1,7 +1,6 @@
 package com.example.quartzdemo;
 
 import com.example.quartzdemo.service.QuartzService;
-import com.example.quartzdemo.service.impl.QuartzServiceImpl;
 import com.example.quartzdemo.service.job.MyJob;
 import org.junit.jupiter.api.Test;
 import org.quartz.Job;
@@ -16,8 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @SpringBootTest
 class QuartzDemoApplicationTests {
-    @Autowired
-    private QuartzServiceImpl quartzService2;
     @Autowired
     private QuartzService quartzService;
 
@@ -37,7 +34,7 @@ class QuartzDemoApplicationTests {
         int repeatCount = 200;
         Map<String, Object> jobData = new HashMap<>();
         jobData.put("age", 19);
-        boolean result = quartzService2.addSimpleTask(jobName, jobGroupName,
+        boolean result = quartzService.addSimpleTask(jobName, jobGroupName,
                 jobClass, jobData,
                 triggerName, triggerGroupName,
                 null, null,
@@ -51,7 +48,7 @@ class QuartzDemoApplicationTests {
         String triggerGroupName = "triggerGroup1";
         int intervalSeconds = 10;
         int repeatCount = 200;
-        boolean result = quartzService2.updateSimpleTask(triggerName, triggerGroupName,
+        boolean result = quartzService.updateSimpleTask(triggerName, triggerGroupName,
                 null, null,
                 intervalSeconds, repeatCount);
         assertTrue(result);
@@ -68,7 +65,7 @@ class QuartzDemoApplicationTests {
         int repeatCount = 200;
         Map<String, Object> jobData = new HashMap<>();
         jobData.put("age", 18);
-        boolean result = quartzService2.saveSimpleTask(jobName, jobGroupName,
+        boolean result = quartzService.saveSimpleTask(jobName, jobGroupName,
                 jobClass, jobData,
                 triggerName, triggerGroupName,
                 null, null,
@@ -80,7 +77,7 @@ class QuartzDemoApplicationTests {
     public void pauseTrigger() throws SchedulerException {
         String triggerName = "trigger2";
         String triggerGroupName = "triggerGroup1";
-        boolean result = quartzService2.pauseTrigger(triggerName, triggerGroupName);
+        boolean result = quartzService.pauseTrigger(triggerName, triggerGroupName);
         assertTrue(result);
     }
 
@@ -88,7 +85,7 @@ class QuartzDemoApplicationTests {
     public void pauseJob() throws SchedulerException {
         String jobName = "job1";
         String jobGroupName = "jobGroup1";
-        boolean result = quartzService2.pauseJob(jobName, jobGroupName);
+        boolean result = quartzService.pauseJob(jobName, jobGroupName);
         assertTrue(result);
     }
 
@@ -96,7 +93,7 @@ class QuartzDemoApplicationTests {
     public void resumeTrigger() throws SchedulerException {
         String triggerName = "trigger1";
         String triggerGroupName = "triggerGroup1";
-        boolean result = quartzService2.resumeTrigger(triggerName, triggerGroupName);
+        boolean result = quartzService.resumeTrigger(triggerName, triggerGroupName);
         assertTrue(result);
     }
 
@@ -104,7 +101,7 @@ class QuartzDemoApplicationTests {
     public void resumeJob() throws SchedulerException {
         String jobName = "job1";
         String jobGroupName = "jobGroup1";
-        boolean result = quartzService2.resumeJob(jobName, jobGroupName);
+        boolean result = quartzService.resumeJob(jobName, jobGroupName);
         assertTrue(result);
     }
 
@@ -112,7 +109,7 @@ class QuartzDemoApplicationTests {
     public void removeTrigger() throws SchedulerException {
         String triggerName = "trigger2";
         String triggerGroupName = "triggerGroup1";
-        boolean result = quartzService2.removeTrigger(triggerName, triggerGroupName);
+        boolean result = quartzService.removeTrigger(triggerName, triggerGroupName);
         assertTrue(result);
     }
 
@@ -120,7 +117,7 @@ class QuartzDemoApplicationTests {
     public void removeJob() throws SchedulerException {
         String jobName = "job1";
         String jobGroupName = "jobGroup1";
-        boolean result = quartzService2.removeJob(jobName, jobGroupName);
+        boolean result = quartzService.removeJob(jobName, jobGroupName);
         assertTrue(result);
     }
 

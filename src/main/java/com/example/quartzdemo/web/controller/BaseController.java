@@ -21,7 +21,7 @@ public class BaseController {
         Class<? extends Job> jobClass = MyJob.class;
         Map<String, Object> dataMap =  new HashMap<>();
         dataMap.put("jobType", "simple");
-        quartzService.saveSimpleTask(jobName, jobClass, triggerName, startTime, endTime, intervalSeconds, repeatCount, dataMap);
+//        quartzService.saveSimpleTask(jobName, jobClass, triggerName, startTime, endTime, intervalSeconds, repeatCount, dataMap);
         return "success";
     }
 
@@ -30,7 +30,7 @@ public class BaseController {
         Class<? extends Job> jobClass = MyJob.class;
         Map<String, Object> dataMap =  new HashMap<>();
         dataMap.put("jobType", "cron");
-        quartzService.saveCronTask(jobName, jobClass, triggerName, startTime, endTime, cron, dataMap);
+//        quartzService.saveCronTask(jobName, jobClass, triggerName, startTime, endTime, cron, dataMap);
         return "success";
     }
 

@@ -12,11 +12,25 @@ import java.util.Map;
 
 @Service
 public class QuartzServiceImpl implements QuartzService {
-    private static final Logger logger = LoggerFactory.getLogger(QuartzServiceImpl.class);
+    private static final Logger logger = LoggerFactory.getLogger(QuartzService.class);
 
     @Autowired
     private Scheduler scheduler;
 
+    @Override
+    public boolean addSimpleTask(String jobName,
+                                 Class<? extends Job> jobClass, Map<?, ?> jobData,
+                                 String triggerName,
+                                 Date startTime, Date endTime,
+                                 int intervalSeconds, int repeatCount) throws SchedulerException {
+        return this.addSimpleTask(jobName, DEFAULT_JOB_GROUP_NAME,
+                jobClass, jobData,
+                triggerName, DEFAULT_TRIGGER_GROUP_NAME,
+                startTime, endTime,
+                intervalSeconds, repeatCount);
+    }
+
+    @Override
     public boolean addSimpleTask(String jobName, String jobGroupName,
                               Class<? extends Job> jobClass, Map<?, ?> jobData,
                               String triggerName, String triggerGroupName,
@@ -33,7 +47,7 @@ public class QuartzServiceImpl implements QuartzService {
         }
 
         // 创建Trigger
-        SimpleTrigger trigger = this.createSimpleTrigger(triggerName, triggerGroupName,
+        SimpleTrigger trigger = this.createSimpleTrigger(triggerKey,
                 startTime, endTime,
                 intervalSeconds, repeatCount, jobDetail);
 
@@ -42,6 +56,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean addCronTask(String jobName, String jobGroupName,
                             Class<? extends Job> jobClass, Map<?, ?> jobData,
                             String triggerName, String triggerGroupName,
@@ -58,7 +73,7 @@ public class QuartzServiceImpl implements QuartzService {
         }
 
         // 创建Trigger
-        CronTrigger trigger = this.createCronTrigger(triggerName, triggerGroupName, startTime, endTime, cron, jobDetail);
+        CronTrigger trigger = this.createCronTrigger(triggerKey, startTime, endTime, cron, jobDetail);
 
         // 执行任务
         scheduler.scheduleJob(trigger);
@@ -66,6 +81,7 @@ public class QuartzServiceImpl implements QuartzService {
     }
 
 
+    @Override
     public boolean updateSimpleTask(String triggerName, String triggerGroupName,
                                  Date startTime, Date endTime,
                                  int intervalSeconds, int repeatCount) throws SchedulerException {
@@ -87,7 +103,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
-
+    @Override
     public boolean updateCronTask(String triggerName, String triggerGroupName,
                                Date startTime, Date endTime, String cron) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
@@ -108,6 +124,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean saveSimpleTask(String jobName, String jobGroupName,
                                Class<? extends Job> jobClass, Map<?, ?> jobData,
                                String triggerName, String triggerGroupName,
@@ -119,7 +136,7 @@ public class QuartzServiceImpl implements QuartzService {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         Trigger trigger = scheduler.getTrigger(triggerKey);
         if(trigger == null) {
-            trigger = this.createSimpleTrigger(triggerName, triggerGroupName, startTime, endTime, intervalSeconds, repeatCount, jobDetail);
+            trigger = this.createSimpleTrigger(triggerKey, startTime, endTime, intervalSeconds, repeatCount, jobDetail);
             scheduler.scheduleJob(trigger);
         } else {
             ScheduleBuilder<SimpleTrigger> scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
@@ -129,6 +146,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean saveCronTask(String jobName, String jobGroupName,
                              Class<? extends Job> jobClass, Map<?, ?> jobData,
                              String triggerName, String triggerGroupName,
@@ -140,7 +158,7 @@ public class QuartzServiceImpl implements QuartzService {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         Trigger trigger = scheduler.getTrigger(triggerKey);
         if(trigger == null) {
-            trigger = this.createCronTrigger(triggerName, triggerGroupName, startTime, endTime, cron, jobDetail);
+            trigger = this.createCronTrigger(triggerKey, startTime, endTime, cron, jobDetail);
             scheduler.scheduleJob(trigger);
         } else {
             ScheduleBuilder<CronTrigger> scheduleBuilder = this.createCronScheduleBuilder(cron);
@@ -150,6 +168,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean pauseTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         if (!scheduler.checkExists(triggerKey)) {
@@ -160,6 +179,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean pauseJob(String jobName, String jobGroupName) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
         if (!scheduler.checkExists(jobKey)) {
@@ -170,12 +190,13 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean pauseAll() throws SchedulerException {
         scheduler.pauseAll();
         return true;
     }
 
-
+    @Override
     public boolean resumeTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         if (!scheduler.checkExists(triggerKey)) {
@@ -186,6 +207,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean resumeJob(String jobName, String jobGroupName) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
         if (!scheduler.checkExists(jobKey)) {
@@ -196,12 +218,13 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean resumeAll() throws SchedulerException {
         scheduler.resumeAll();
         return true;
     }
 
-
+    @Override
     public boolean removeTrigger(String triggerName, String triggerGroupName) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(triggerName, triggerGroupName);
         if (!scheduler.checkExists(triggerKey)) {
@@ -213,6 +236,7 @@ public class QuartzServiceImpl implements QuartzService {
         return true;
     }
 
+    @Override
     public boolean removeJob(String jobName, String jobGroupName) throws SchedulerException {
         JobKey jobKey = JobKey.jobKey(jobName, jobGroupName);
         if (!scheduler.checkExists(jobKey)) {
@@ -267,11 +291,11 @@ public class QuartzServiceImpl implements QuartzService {
 
 
     /*  <-- Create TriggerBuilder */
-    private <T extends Trigger> TriggerBuilder<T> createTriggerBuilder(String triggerName, String triggerGroupName,
+    private <T extends Trigger> TriggerBuilder<T> createTriggerBuilder(TriggerKey triggerKey,
                                                                        Date startTime, Date endTime,
                                                                        ScheduleBuilder<T> scheduleBuilder, JobDetail jobDetail) {
         TriggerBuilder<T > triggerBuilder = TriggerBuilder.newTrigger()
-                .withIdentity(triggerName, triggerGroupName)
+                .withIdentity(triggerKey)
                 .withSchedule(scheduleBuilder);
         if (startTime != null) triggerBuilder.startAt(startTime);
         if (endTime != null) triggerBuilder.endAt(endTime);
@@ -283,19 +307,19 @@ public class QuartzServiceImpl implements QuartzService {
 
 
     /*  <-- Create Trigger */
-    private SimpleTrigger createSimpleTrigger(String triggerName, String triggerGroupName,
+    private SimpleTrigger createSimpleTrigger(TriggerKey triggerKey,
                                               Date startTime, Date endTime,
                                               int intervalSeconds, int repeatCount, JobDetail jobDetail) {
         ScheduleBuilder<SimpleTrigger> scheduleBuilder = this.createSimpleScheduleBuilder(intervalSeconds, repeatCount);
-        TriggerBuilder<SimpleTrigger> triggerBuilder = this.createTriggerBuilder(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder, jobDetail);
+        TriggerBuilder<SimpleTrigger> triggerBuilder = this.createTriggerBuilder(triggerKey, startTime, endTime, scheduleBuilder, jobDetail);
         return triggerBuilder.build();
     }
 
-    private CronTrigger createCronTrigger(String triggerName, String triggerGroupName,
+    private CronTrigger createCronTrigger(TriggerKey triggerKey,
                                               Date startTime, Date endTime,
                                               String cron, JobDetail jobDetail) {
         ScheduleBuilder<CronTrigger> scheduleBuilder = this.createCronScheduleBuilder(cron);
-        TriggerBuilder<CronTrigger> triggerBuilder = this.createTriggerBuilder(triggerName, triggerGroupName, startTime, endTime, scheduleBuilder, jobDetail);
+        TriggerBuilder<CronTrigger> triggerBuilder = this.createTriggerBuilder(triggerKey, startTime, endTime, scheduleBuilder, jobDetail);
         return triggerBuilder.build();
     }
     /* Create Trigger --> */
