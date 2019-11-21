@@ -1,12 +1,19 @@
 
 server:
-  port: 9999
+  port: ${custom-props.port}
 
 spring:
+#  datasource:
+#    driver-class-name: com.mysql.cj.jdbc.Driver
+#    url: jdbc:mysql://localhost:3306/jp_test?useUnicode=true&useSSL=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+#    username: root
+#    password: 123456
   quartz:
+    scheduler:
+      instanceId: AUTO
     job-store-type: jdbc
     jdbc:
-      initialize-schema: never
+      initialize-schema: always
     properties:
       org:
         quartz:
@@ -21,5 +28,27 @@ spring:
           jobStore:
             class: org.quartz.impl.jdbcjobstore.JobStoreTX
             dataSource: myDS
-            isClustered: true
+#            isClustered: ${custom-props.quartz.isClustered}
 
+custom-props:
+  port: 9999
+  quartz:
+    isClustered: false
+
+---
+spring:
+  profiles: env1
+
+custom-props:
+  port: 9980
+  quartz:
+    isClustered: false
+
+---
+spring:
+  profiles: env2
+
+custom-props:
+  port: 9990
+  quartz:
+    isClustered: true
