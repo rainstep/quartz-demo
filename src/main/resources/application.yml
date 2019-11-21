@@ -3,32 +3,34 @@ server:
   port: ${custom-props.port}
 
 spring:
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/jp_test?useUnicode=true&useSSL=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-#    username: root
-#    password: 123456
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/test?useUnicode=true&useSSL=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
   quartz:
     scheduler:
       instanceId: AUTO
     job-store-type: jdbc
     jdbc:
       initialize-schema: always
+#      schema: classpath:/test_tables_mysql_innodb.sql
     properties:
       org:
         quartz:
-          scheduler:
-            instanceId: AUTO
-          dataSource:
-            myDS:
-              driver: com.mysql.cj.jdbc.Driver
-              URL: jdbc:mysql://localhost:3306/test?useUnicode=true&useSSL=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-              user: root
-              password: 123456
+#          scheduler:
+#            instanceId: AUTO
+#          dataSource:
+#            myDS:
+#              driver: com.mysql.cj.jdbc.Driver
+#              URL: jdbc:mysql://localhost:3306/test?useUnicode=true&useSSL=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+#              user: root
+#              password: 123456
           jobStore:
-            class: org.quartz.impl.jdbcjobstore.JobStoreTX
-            dataSource: myDS
+#            class: org.quartz.impl.jdbcjobstore.JobStoreTX
+#            dataSource: myDS
 #            isClustered: ${custom-props.quartz.isClustered}
+#            tablePrefix: TEST_QRTZ_
 
 custom-props:
   port: 9999
@@ -42,7 +44,7 @@ spring:
 custom-props:
   port: 9980
   quartz:
-    isClustered: false
+    isClustered: true
 
 ---
 spring:
